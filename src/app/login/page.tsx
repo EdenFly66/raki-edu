@@ -11,6 +11,11 @@ type LoginPageProps = {
   }>
 }
 
+type LoginPageViewProps = {
+  error?: string
+  message?: string
+}
+
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const supabase = await createServerSupabaseClient()
   const {
@@ -23,6 +28,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
   const { error, message } = await searchParams
 
+  return <LoginPageView error={error} message={message} />
+}
+
+export function LoginPageView({ error, message }: LoginPageViewProps) {
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-6 py-12">
       <h1 className="text-2xl font-semibold">Login</h1>

@@ -28,5 +28,5 @@
 body {
   background: var(--color-background);
   color: var(--color-foreground);
-  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+  line-height: 1.5;
 }

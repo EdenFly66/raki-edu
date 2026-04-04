@@ -10,6 +10,10 @@ type RegisterPageProps = {
   }>
 }
 
+type RegisterPageViewProps = {
+  error?: string
+}
+
 export default async function RegisterPage({
   searchParams,
 }: RegisterPageProps) {
@@ -24,6 +28,10 @@ export default async function RegisterPage({
 
   const { error } = await searchParams
 
+  return <RegisterPageView error={error} />
+}
+
+export function RegisterPageView({ error }: RegisterPageViewProps) {
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-6 py-12">
       <h1 className="text-2xl font-semibold">Create account</h1>
