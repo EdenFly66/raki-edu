@@ -1,0 +1,102 @@
+import Link from 'next/link'
+import { notFound, redirect } from 'next/navigation'
+
+import { createServerSupabaseClient } from '@/lib/supabase/server'
+
+type HistoryDetailPageProps = {
+  params: Promise<{
+    id: string
+  }>
+}
+
+type HistoryDetail = {
+  id: string
+  created_at: string
+  question_count: number
+  content: string
+  learning_objective_id: string
+  learning_objectives:
+    | {
+        oa_code: string | null
+        title: string
+      }
+    | {
+        oa_code: string | null
+        title: string
+      }[]
+    | null
+}
+
+export default async function HistoryDetailPage({
+  params,
+}: HistoryDetailPageProps) {
+  const { id } = await params
+  const supabase = await createServerSupabaseClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect('/login')
+  }
+
+  const { data, error } = await supabase
+    .from('generated_content')
+    .select(
+      'id, created_at, question_count, content, learning_objective_id, learning_objectives(oa_code, title)'
+    )
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  if (error) {
+    console.error('Failed to load history detail:', error.message)
+  }
+
+  const item = data as HistoryDetail | null
+
+  if (!item) {
+    notFound()
+  }
+
+  const learningObjective = Array.isArray(item.learning_objectives)
+    ? item.learning_objectives[0]
+    : item.learning_objectives
+
+  return (
+    <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-6 py-12">
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-semibold">Contenido generado</h1>
+        <Link
+          className="rounded-md border border-black/20 px-4 py-2 text-sm font-medium"
+          href="/history"
+        >
+          Volver al historial
+        </Link>
+      </div>
+
+      <section className="mt-8 rounded-lg border border-black/10 bg-white p-6 text-black">
+        <div className="space-y-2 text-sm">
+          <p>
+            <span className="font-medium">Fecha:</span>{' '}
+            {new Date(item.created_at).toLocaleString('es-CL')}
+          </p>
+          <p>
+            <span className="font-medium">Cantidad de preguntas:</span>{' '}
+            {item.question_count}
+          </p>
+          <p>
+            <span className="font-medium">Objetivo de Aprendizaje:</span>{' '}
+            {learningObjective
+              ? `${learningObjective.oa_code ?? 'OA'} - ${learningObjective.title}`
+              : item.learning_objective_id}
+          </p>
+        </div>
+
+        <pre className="mt-6 whitespace-pre-wrap text-sm leading-6">
+          {item.content}
+        </pre>
+      </section>
+    </main>
+  )
+}

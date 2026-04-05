@@ -28,18 +28,25 @@ export async function generateEducationalTest({
 }: EducationalTestInput) {
   const response = await openai.responses.create({
     model: 'gpt-5',
-    input: `Create an educational test in structured text format.
+    input: `Genera una evaluacion educativa en espanol, en formato de texto estructurado, usando este contexto curricular.
 
-Subject: ${subject}
-Level: ${level}
-Objective: ${objective}
-Number of questions: ${questionCount}
+Nivel: ${level}
+Asignatura: ${subject}
+Objetivo de Aprendizaje: ${objective}
+Cantidad de Preguntas: ${questionCount}
 
-Return only:
-Title
-Instructions
-Questions
-Answer Key`,
+Requisitos:
+- Escribe todo en espanol.
+- Alinea las preguntas al objetivo de aprendizaje seleccionado.
+- Incluye exactamente ${questionCount} preguntas.
+- Usa un nivel de dificultad adecuado para ${level}.
+- Manten un formato claro y reutilizable por un docente.
+
+Devuelve solo este formato:
+Titulo
+Instrucciones
+Preguntas
+Respuestas`,
   })
 
   console.log('Generated educational test:', response.output_text)

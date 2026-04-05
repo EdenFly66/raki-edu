@@ -35,6 +35,17 @@ export async function generateEducationalTestAction(
 
   try {
     const supabase = await createServerSupabaseClient()
+    const boundedQuestionCount = Math.min(Math.max(questionCount, 1), 20)
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return {
+        content: '',
+        error: 'Debes iniciar sesion para generar contenido.',
+      }
+    }
 
     const [{ data: level }, { data: levelSubject }, { data: learningObjective }] =
       await Promise.all([
@@ -80,8 +91,21 @@ export async function generateEducationalTestAction(
       subject,
       level: level.name,
       objective,
-      questionCount: Math.min(Math.max(questionCount, 1), 20),
+      questionCount: boundedQuestionCount,
     })
+
+    const { error: insertError } = await supabase.from('generated_content').insert({
+      user_id: user.id,
+      level_id: levelId,
+      level_subject_id: levelSubjectId,
+      learning_objective_id: learningObjectiveId,
+      question_count: boundedQuestionCount,
+      content,
+    })
+
+    if (insertError) {
+      console.error('Failed to save generated content:', insertError.message)
+    }
 
     return {
       content,
