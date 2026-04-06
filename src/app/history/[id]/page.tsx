@@ -12,7 +12,7 @@ type HistoryDetailPageProps = {
 type HistoryDetail = {
   id: string
   created_at: string
-  question_count: number
+  question_count: number | null
   content: string
   learning_objective_id: string
   learning_objectives:
@@ -66,34 +66,41 @@ export default async function HistoryDetailPage({
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col px-6 py-12">
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-semibold">Contenido generado</h1>
+        <h1 className="text-3xl font-semibold tracking-tight text-text">
+          Contenido generado
+        </h1>
+      </div>
+
+      <div className="mt-6">
         <Link
-          className="rounded-md border border-black/20 px-4 py-2 text-sm font-medium"
+          className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-text hover:bg-primary-soft"
           href="/history"
         >
           Volver al historial
         </Link>
       </div>
 
-      <section className="mt-8 rounded-lg border border-black/10 bg-white p-6 text-black">
-        <div className="space-y-2 text-sm">
+      <section className="mt-8 rounded-lg border border-border bg-surface p-6 text-text shadow-sm">
+        <div className="space-y-2 text-sm text-text-muted">
           <p>
-            <span className="font-medium">Fecha:</span>{' '}
+            <span className="font-medium text-text">Fecha:</span>{' '}
             {new Date(item.created_at).toLocaleString('es-CL')}
           </p>
+          {item.question_count !== null ? (
+            <p>
+              <span className="font-medium text-text">Cantidad de preguntas:</span>{' '}
+              {item.question_count}
+            </p>
+          ) : null}
           <p>
-            <span className="font-medium">Cantidad de preguntas:</span>{' '}
-            {item.question_count}
-          </p>
-          <p>
-            <span className="font-medium">Objetivo de Aprendizaje:</span>{' '}
+            <span className="font-medium text-text">Objetivo de Aprendizaje:</span>{' '}
             {learningObjective
               ? `${learningObjective.oa_code ?? 'OA'} - ${learningObjective.title}`
               : item.learning_objective_id}
           </p>
         </div>
 
-        <pre className="mt-6 whitespace-pre-wrap text-sm leading-6">
+        <pre className="mt-6 whitespace-pre-wrap text-sm leading-7 text-text">
           {item.content}
         </pre>
       </section>
