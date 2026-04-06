@@ -1,21 +1,8 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 
+import { loadGeneratedContentList } from '@/lib/generated-content'
 import { createServerSupabaseClient } from '@/lib/supabase/server'
-
-type RecentContentItem = {
-  id: string
-  created_at: string
-  content: string
-  resource_types:
-    | {
-        name: string
-      }
-    | {
-        name: string
-      }[]
-    | null
-}
 
 function getContentTitle(content: string) {
   const firstLine =
@@ -25,13 +12,6 @@ function getContentTitle(content: string) {
       .find(Boolean) ?? 'Recurso sin titulo'
 
   return firstLine.replace(/^titulo\s*[:.-]?\s*/i, '') || 'Recurso sin titulo'
-}
-
-function getResourceTypeName(
-  resourceType: RecentContentItem['resource_types']
-) {
-  const item = Array.isArray(resourceType) ? resourceType[0] : resourceType
-  return item?.name ?? 'Recurso'
 }
 
 export default async function DashboardPage() {
@@ -44,14 +24,13 @@ export default async function DashboardPage() {
     redirect('/login')
   }
 
-  const { data } = await supabase
-    .from('generated_content')
-    .select('id, created_at, content, resource_types(name)')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(6)
-
-  const recentItems = (data as RecentContentItem[] | null) ?? []
+  const { items: recentItems, error } = await loadGeneratedContentList({
+    supabase,
+    userId: user.id,
+    limit: 6,
+    logContext: 'DashboardPage',
+  })
+  const favoriteItems = recentItems.filter((item) => item.is_favorite).slice(0, 3)
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6 py-12">
@@ -117,6 +96,12 @@ export default async function DashboardPage() {
           </Link>
         </div>
 
+        {error ? (
+          <div className="mt-6 rounded-lg border border-border bg-primary-bg p-4">
+            <p className="text-sm text-text-muted">{error}</p>
+          </div>
+        ) : null}
+
         {recentItems.length ? (
           <ul className="mt-6 divide-y divide-border">
             {recentItems.map((item) => (
@@ -126,10 +111,10 @@ export default async function DashboardPage() {
               >
                 <div className="min-w-0">
                   <p className="truncate text-base font-medium text-text">
-                    {getContentTitle(item.content)}
+                    {item.title || getContentTitle(item.content)}
                   </p>
                   <p className="mt-1 text-sm text-text-muted">
-                    {getResourceTypeName(item.resource_types)}
+                    {item.resourceTypeName ?? 'Recurso'}
                   </p>
                   <p className="mt-1 text-sm text-text-muted">
                     {new Date(item.created_at).toLocaleString('es-CL')}
@@ -154,6 +139,44 @@ export default async function DashboardPage() {
           </div>
         )}
       </section>
+
+      {favoriteItems.length ? (
+        <section className="mt-8 rounded-lg border border-border bg-surface p-6 shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="text-xl font-semibold text-text">Favoritos</h2>
+          </div>
+
+          <ul className="mt-6 divide-y divide-border">
+            {favoriteItems.map((item) => (
+              <li
+                key={item.id}
+                className="flex flex-col gap-4 py-4 md:flex-row md:items-center md:justify-between"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span aria-hidden="true" className="text-sm text-primary">
+                      ★
+                    </span>
+                    <p className="truncate text-base font-medium text-text">
+                      {item.title || getContentTitle(item.content)}
+                    </p>
+                  </div>
+                  <p className="mt-1 text-sm text-text-muted">
+                    {item.resourceTypeName ?? 'Recurso'}
+                  </p>
+                </div>
+
+                <Link
+                  className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary-hover"
+                  href={`/history/${item.id}`}
+                >
+                  Ver
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </main>
   )
 }

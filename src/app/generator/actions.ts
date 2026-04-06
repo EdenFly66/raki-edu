@@ -14,10 +14,31 @@ type SubjectJoin = {
 
 const resourceTypesWithQuestions = new Set(['evaluacion'])
 
+function buildAutomaticTitle({
+  resourceType,
+  level,
+  subjects,
+}: {
+  resourceType: string
+  level: string
+  subjects: string[]
+}) {
+  if (!subjects.length) {
+    return `${resourceType} - ${level}`
+  }
+
+  if (subjects.length === 1) {
+    return `${resourceType} de ${subjects[0]} - ${level}`
+  }
+
+  return `${resourceType} interdisciplinario - ${level}`
+}
+
 export async function generateEducationalTestAction(
   _prevState: GeneratorState,
   formData: FormData
 ): Promise<GeneratorState> {
+  const providedTitle = String(formData.get('title') ?? '').trim()
   const resourceTypeId = String(formData.get('resourceTypeId') ?? '').trim()
   const difficultyId = String(formData.get('difficultyId') ?? '').trim()
   const modalityId = String(formData.get('modalityId') ?? '').trim()
@@ -196,6 +217,13 @@ export async function generateEducationalTestAction(
           ? estimatedClassCount
           : null,
     })
+    const title =
+      providedTitle ||
+      buildAutomaticTitle({
+        resourceType: resourceType.name,
+        level: level.name,
+        subjects: subjects.map((subject) => subject.name),
+      })
 
     const primaryLevelSubjectId = levelSubjectIds[0]
     const primaryLearningObjectiveId = learningObjectiveIds[0]
@@ -207,6 +235,7 @@ export async function generateEducationalTestAction(
         level_subject_id: primaryLevelSubjectId,
         learning_objective_id: primaryLearningObjectiveId,
         question_count: boundedQuestionCount,
+        title,
         content,
         resource_type_id: resourceTypeId,
         difficulty_id: difficultyId,
